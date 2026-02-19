@@ -55,17 +55,22 @@ msg_ok "Configured Postiz"
 
 msg_info "Starting Postiz Stack (Patience)"
 cd /opt/postiz
-$STD docker compose up -d
+if ! $STD docker compose up -d; then
+  msg_error "Failed to start Postiz stack"
+  docker compose logs --tail=120 || true
+  exit 1
+fi
 
 msg_info "Waiting for Postiz to Start"
 POSTIZ_CONTAINER_ID=""
-for i in {1..90}; do
+POSTIZ_READY="false"
+for i in {1..180}; do
   POSTIZ_CONTAINER_ID="$(docker compose ps -q postiz 2>/dev/null)"
   if [[ -n "${POSTIZ_CONTAINER_ID}" ]]; then
     CONTAINER_STATUS="$(docker inspect --format '{{.State.Status}}' "${POSTIZ_CONTAINER_ID}" 2>/dev/null || true)"
     if [[ "${CONTAINER_STATUS}" == "running" ]]; then
       if curl -fsS http://127.0.0.1:4007 >/dev/null 2>&1; then
-        msg_ok "Started Postiz Stack"
+        POSTIZ_READY="true"
         break
       fi
     fi
@@ -76,16 +81,25 @@ for i in {1..90}; do
       exit 1
     fi
   fi
-
-  if [[ "${i}" -eq 90 ]]; then
-    msg_error "Timed out waiting for Postiz to become ready on port 4007"
-    if [[ -n "${POSTIZ_CONTAINER_ID}" ]]; then
-      docker logs "${POSTIZ_CONTAINER_ID}" | tail -n 80
-    fi
-    exit 1
-  fi
   sleep 2
 done
+
+if [[ "${POSTIZ_READY}" == "true" ]]; then
+  msg_ok "Started Postiz Stack"
+else
+  FINAL_STATUS=""
+  if [[ -n "${POSTIZ_CONTAINER_ID}" ]]; then
+    FINAL_STATUS="$(docker inspect --format '{{.State.Status}}' "${POSTIZ_CONTAINER_ID}" 2>/dev/null || true)"
+  fi
+  if [[ "${FINAL_STATUS}" == "running" ]]; then
+    msg_warn "Postiz is still initializing. Web UI can take several more minutes on first boot."
+    msg_ok "Started Postiz Stack"
+  else
+    msg_error "Postiz stack did not start correctly"
+    docker compose logs --tail=120 || true
+    exit 1
+  fi
+fi
 
 msg_info "Creating Postiz Credentials File"
 cat <<EOF >~/postiz.creds

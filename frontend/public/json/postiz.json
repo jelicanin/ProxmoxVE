@@ -41,6 +41,10 @@
       "type": "info"
     },
     {
+      "text": "First startup can take several minutes while all Postiz containers initialize.",
+      "type": "info"
+    },
+    {
       "text": "Temporal UI and Spotlight are disabled by default in `docker-compose.override.yaml` to avoid extra open ports. Remove their `profiles` entries to enable them.",
       "type": "warning"
     }
