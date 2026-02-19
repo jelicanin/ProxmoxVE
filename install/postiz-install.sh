@@ -2,7 +2,7 @@
 
 # Copyright (c) 2021-2026 community-scripts ORG
 # Author: jelicanin
-# License: MIT | https://github.com/jelicanin/ProxmoxVE/raw/main/LICENSE
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://docs.postiz.com/self-hosting/docker-compose
 
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
